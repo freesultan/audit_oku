@@ -130,7 +130,7 @@ contract OracleLess is IOracleLess, Ownable, ReentrancyGuard, Pausable {
             whitelistedTokens[tokenIn] && whitelistedTokens[tokenOut],
             "tokens not whitelisted"
         );
-
+        //@>i transfer tokens from sender to this contract
         //procure tokens
         procureTokens(tokenIn, amountIn, msg.sender, permitPayload);
 
@@ -171,7 +171,9 @@ contract OracleLess is IOracleLess, Ownable, ReentrancyGuard, Pausable {
     ///@notice only pending orders can be cancelled
     function cancelOrder(uint96 orderId) external nonReentrant whenNotPaused {
         Order memory order = orders[orderId];
+        //@>q only recipient can cancel order not sender who created the order?
         require(msg.sender == order.recipient, "Only Order Owner");
+        //@>i cancel with refund
         _cancelOrder(order, true);
     }
 
@@ -205,10 +207,10 @@ contract OracleLess is IOracleLess, Ownable, ReentrancyGuard, Pausable {
     function fillOrder(
         uint96 pendingOrderIdx,
         uint96 orderId,
-        address target,
+        address target, //@>i target contract to do the swaps
         bytes calldata txData
     ) external override nonReentrant whenNotPaused {
-        //validate target
+        //validate target (is it whitelisted?)
         MASTER.validateTarget(target);
 
         require(

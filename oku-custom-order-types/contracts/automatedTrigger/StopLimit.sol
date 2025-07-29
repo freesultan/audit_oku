@@ -19,7 +19,7 @@ contract StopLimit is Ownable, IStopLimit, ReentrancyGuard, Pausable {
     IAutomationMaster public immutable MASTER;
     IBracket public immutable BRACKET_CONTRACT;
     IPermit2 public immutable permit2;
-
+   
     mapping(uint96 => Order) public orders;
     EnumerableSet.UintSet private dataSet;
 
@@ -98,7 +98,9 @@ contract StopLimit is Ownable, IStopLimit, ReentrancyGuard, Pausable {
         returns (bool upkeepNeeded, bytes memory performData)
     {
         uint96 i = 0;
+        //@>q where is dataSet populated?
         uint96 length = uint96(dataSet.length());
+        //@>q why 64?
         if (checkData.length == 64) {
             //decode start and end idxs
             (i, length) = abi.decode(checkData, (uint96, uint96));
@@ -140,6 +142,7 @@ contract StopLimit is Ownable, IStopLimit, ReentrancyGuard, Pausable {
         );
         uint96 orderIdFromSet = uint96(dataSet.at(data.pendingOrderIdx));
         require(orderIdFromSet == data.orderId, "Order Fill Mismatch");
+        //@>i get the order
         Order memory order = orders[uint96(dataSet.at(data.pendingOrderIdx))];
 
         //confirm order is in range to prevent improper fill
@@ -475,6 +478,7 @@ contract StopLimit is Ownable, IStopLimit, ReentrancyGuard, Pausable {
         Order memory order
     ) internal view returns (bool inRange, uint256 exchangeRate) {
         exchangeRate = MASTER.getExchangeRate(order.tokenIn, order.tokenOut);
+        //@>q what if exchage rate is specified wrong? 
         if (order.direction) {
             if (exchangeRate <= order.stopLimitPrice) {
                 inRange = true;

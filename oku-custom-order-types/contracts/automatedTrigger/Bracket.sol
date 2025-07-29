@@ -143,6 +143,7 @@ contract Bracket is Ownable, IBracket, ReentrancyGuard, Pausable {
     function performUpkeep(
         bytes calldata performData
     ) external override nonReentrant whenNotPaused {
+        //@>q autumation master call this perform after checkinRange return true?
         MasterUpkeepData memory data = abi.decode(
             performData,
             (MasterUpkeepData)
@@ -165,6 +166,7 @@ contract Bracket is Ownable, IBracket, ReentrancyGuard, Pausable {
             order.tokenIn,
             order.tokenOut
         );
+        //@>i swap - external interaction
         (uint256 swapAmountOut, uint256 tokenInRefund) = execute(
             data.target,
             data.txData,
@@ -665,9 +667,9 @@ contract Bracket is Ownable, IBracket, ReentrancyGuard, Pausable {
         Order memory order
     )
         internal
-        view
+        view 
         returns (bool inRange, bool takeProfit, uint256 exchangeRate)
-    {
+    { //@>i returns if trigger? if takeprofit or stoploss
         exchangeRate = MASTER.getExchangeRate(order.tokenIn, order.tokenOut);
 
         if (order.stopPrice > order.takeProfit) {

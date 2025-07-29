@@ -35,7 +35,7 @@ contract AutomationMaster is IAutomationMaster, Ownable, Pausable {
 
     //whitelist of wallets allowed to set targets
     mapping(address => bool) public targetSetters;
-
+    //@>q what's IPythRelay?
     ///each token must have a registered oracle in order to be tradable
     mapping(IERC20 => IPythRelay) public oracles;
     mapping(address => uint96) private nonces;
@@ -155,6 +155,7 @@ contract AutomationMaster is IAutomationMaster, Ownable, Pausable {
     ///@notice sweep the entire balance of @param token to the owner
     ///@notice this contract should not hold funds other than collected fees,
     ///which are forwarded here after each transaction
+    //@>i invariant: this contract should not hold funds other than collected fees
     function sweep(IERC20 token, address recipient) external onlyOwner {
         require(
             recipient != address(0),
@@ -206,8 +207,9 @@ contract AutomationMaster is IAutomationMaster, Ownable, Pausable {
         // Retrieve USD prices from oracles, scaled to 1e8
         uint256 priceIn = oracles[tokenIn].currentValue();
         uint256 priceOut = oracles[tokenOut].currentValue();
-
+        //@>q does this 1e8 scaling make sense? // - Yes, it ensures that the exchange rate is in a consistent format for calculations.
         // Return the exchange rate in 1e8 terms
+        //@> (3000 * 10^8 * 10^8) / (1 * 10^8)
         return (priceIn * 1e8) / priceOut;
     }
 
@@ -215,6 +217,7 @@ contract AutomationMaster is IAutomationMaster, Ownable, Pausable {
     function generateOrderId(
         address sender
     ) external override onlySubKeepers returns (uint96) {
+        //@>q can nonces be reset?
         uint96 nonce = nonces[sender]++;
         uint256 hashedValue = uint256(
             keccak256(
@@ -262,12 +265,18 @@ contract AutomationMaster is IAutomationMaster, Ownable, Pausable {
         IERC20 tokenIn,
         uint256 amountIn
     ) external view override {
+        //@>i current price is in 1e8 terms
         uint256 currentPrice = oracles[tokenIn].currentValue();
+        //@>i usedvalue is in 1e8 terms 
         uint256 usdValue = (currentPrice * amountIn) /
             (10 ** ERC20(address(tokenIn)).decimals());
+
         require(usdValue >= minOrderSize, "order too small");
     }
 
+    //@>i AutomatedRunner call this to see if there is orders to fill
+    //@>i  The `checkUpkeep` function checks if there are any pending orders that need to be processed by the sub-keeper contracts. 
+    //@>q chainlink outomatic keeper call this?
     ///@notice check upkeep on all order types
     function checkUpkeep(
         bytes calldata checkData
@@ -276,7 +285,7 @@ contract AutomationMaster is IAutomationMaster, Ownable, Pausable {
         view
         override
         returns (bool upkeepNeeded, bytes memory performData)
-    {
+    {   
         //check stop limit order
         (upkeepNeeded, performData) = STOP_LIMIT_CONTRACT.checkUpkeep(
             checkData

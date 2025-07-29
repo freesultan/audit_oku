@@ -67,6 +67,7 @@ ___
 2. The owner of these contracts will be an Oku company multisig wallet. 
 3. There exists a separate permission to whitelist targets, this is to allow more flexible whitelist capability without the need to go through a multisig each time. This permission will be retained by internal personnel to Oku.  
 4. Contracts are not intended to be upgradeable. This adds confidence to users as the contracts will not change while their funds are in them. 
+//@>q what does this paragraph mean?
 5. Orders placed on these contracts are publicly fillable. Any trader, MEV actor, or other automation system may participate in filling orders. Initially, [Adrastia](https://adrastia.io/) is monitoring the contracts for orders with their robust system. Dispite following a ChainLink automation compatible interface, these contracts are not expected to work with off-the-shelf ChainLink keepers. 
 
 ### Parameters
@@ -79,9 +80,10 @@ ___
 2. All ERC20 tokens (and USDT) are considered in scope, with the exception of any fee-on-transfer tokens, tax tokens, and rebasing tokens. 
 3. The contract is expected to handle all aspects of accounting and verification before and after the swap to ensure the route provided by the caller of `performUpkeep()` is effective at satisfying the fill conditions of the order. 
 4. MEV / Frontrunning issues are generally out of scope so long as their risks can be adequately mitigated with the current levers available. To completely deter front running attacks, a slippage of 0 can potentially be used, which will ensure that there is no room to front run, with the consequence of needing a slightly 'better' effective price on the router in order for the order to fill. 
-5. Tokens and Routers are whitelisted for security, specifically in order to avoid malicious external calls by manipulating the `target` and/or `txData`. Any potential points of failure that require a malicious `target` or malicious tokens to be listed should likely be considered infomrational, as this point of failure can be considered operational security. 
-6. Only orders that can be filled per their user specified parameters (prices, slippage, etc) should be fillable, if any such orders are fillable outside these parameters, then this would be a vulnerability. 
+5. Tokens and Routers are whitelisted for security, specifically in order to avoid malicious external calls by manipulating the `target` and/or `txData`. Any potential points of failure that require a malicious `target` or malicious tokens to be listed should likely be considered infomrational, as this point of failure can be considered operational security. //@>q can attacker fill the orders outsite the user specified parameters?
+6. Only orders that can be filled per their user specified parameters (prices, slippage, etc) should be fillable, if any such orders are fillable outside these parameters, then this would be a vulnerability. //@>q I though they use pyth instead of chainlink?
 7. Oracle Providers are assumed to serve high quality data, currently only ChainLink on chain oracles are used. Oracles are assumed to return a USD price in 1e8 terms. Issues related to stale or otherwise incorrect responses from external oracles are considered to be out of scope
+//@>q how can owners steal user funds?
 8. Contract owners should not be able to steal user funds. User funds should only exist on `Bracket`, `StopLimit`, or `OracleLess`. Collected fees should only exist on `AutomationMaster`. There is the option for admins to cancel user orders and waive the refund, this is to remove broken or stale orders, should such issues arise. The funds from orders cancelled in this way will be locked on the contract and are not available to be stolen by anyone. 
 
 
