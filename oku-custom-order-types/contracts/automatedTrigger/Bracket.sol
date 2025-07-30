@@ -84,7 +84,8 @@ contract Bracket is Ownable, IBracket, ReentrancyGuard, Pausable {
         }
         return ordersSubset;
     }
-
+    //@>i in checkData, the caller(bot,chainlikn autumation keeper,user) can specify the start and end index of the pending orders to check
+    //@>q any user can call checkUpkeep and performUpkeep? Yes, both functions can be called by any user.
     function checkUpkeep(
         bytes calldata checkData
     )
@@ -109,12 +110,15 @@ contract Bracket is Ownable, IBracket, ReentrancyGuard, Pausable {
                 bool takeProfit,
                 uint256 exchangeRate
             ) = checkInRange(order);
+            //@>q this function returns performdata for first inrange order? 
+            //@>q if there is no inrange order, then performData is empty?  
             if (inRange) {
                 return (
                     true,
                     abi.encode(
                         MasterUpkeepData({
                             orderType: OrderType.BRACKET,
+                            //@>q shouldn't target be the target exchange for swap?
                             target: address(this),
                             txData: "0x",
                             pendingOrderIdx: i,
@@ -150,23 +154,26 @@ contract Bracket is Ownable, IBracket, ReentrancyGuard, Pausable {
         );
         uint96 orderIdFromSet = uint96(dataSet.at(data.pendingOrderIdx));
         require(orderIdFromSet == data.orderId, "Order Fill Mismatch");
+
         Order memory order = orders[data.orderId];
 
+        //@>q here we checkinRange(order) again, because the order may have been modified or cancelled since the checkUpkeep call
         //deduce if we are filling stop or take profit
         (bool inRange, bool takeProfit, ) = checkInRange(order);
+
         require(inRange, "order ! in range");
 
         //deduce bips
         uint16 bips = takeProfit
             ? order.takeProfitSlippage
             : order.stopSlippage;
-
+        //@>i return balances of all tokens for this contract except tokenIn & tokenOut without check
         uint256[] memory initBalances = verifyTokenBalances(
             new uint256[](0),
             order.tokenIn,
             order.tokenOut
         );
-        //@>i swap - external interaction
+         //@>i swap - external interaction
         (uint256 swapAmountOut, uint256 tokenInRefund) = execute(
             data.target,
             data.txData,
@@ -176,6 +183,7 @@ contract Bracket is Ownable, IBracket, ReentrancyGuard, Pausable {
             bips,
             order.feeBips
         );
+        //@>i return balances of all tokens for this contract except tokenIn & tokenOut. reverts if check fails
         verifyTokenBalances(initBalances, order.tokenIn, order.tokenOut);
 
         //handle accounting
@@ -432,12 +440,12 @@ contract Bracket is Ownable, IBracket, ReentrancyGuard, Pausable {
                 swapPayload,
                 (SwapParams)
             );
-            //procure swap token in
+            //procure swap token in @>i from stopLimit
             procureTokens(
                 swapParams.swapTokenIn,
                 swapParams.swapAmountIn,
-                msg.sender,
-                permitPayload
+                msg.sender, //@>i from stopLimit
+                permitPayload 
             );
 
             _createOrderWithSwap(
@@ -564,6 +572,7 @@ contract Bracket is Ownable, IBracket, ReentrancyGuard, Pausable {
         }
 
         //generate random but unique order id if there is not an existing orderId from a stop limit order
+        //@>q what if the existingOrderId is already used? 
         if (existingOrderId == 0) {
             existingOrderId = MASTER.generateOrderId(msg.sender);
         }

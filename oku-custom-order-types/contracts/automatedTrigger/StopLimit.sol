@@ -150,6 +150,7 @@ contract StopLimit is Ownable, IStopLimit, ReentrancyGuard, Pausable {
         require(inRange, "order ! in range");
 
         //remove from pending dataSet
+        //@>q why don't remove/delete order from orders?
         require(dataSet.remove(order.orderId), "order not active");
 
         //approve
@@ -167,9 +168,9 @@ contract StopLimit is Ownable, IStopLimit, ReentrancyGuard, Pausable {
             SwapParams memory params = SwapParams({
                 swapTokenIn: order.tokenIn,
                 swapAmountIn: order.amountIn,
-                swapTarget: data.target,
+                swapTarget: data.target,//@>i for example UNISWAP_V3_ROUTER
                 swapSlippage: order.swapSlippage,
-                txData: data.txData
+                txData: data.txData //@>i encoded swap call
             });
             swapPayload = abi.encode(params);
 
@@ -183,7 +184,7 @@ contract StopLimit is Ownable, IStopLimit, ReentrancyGuard, Pausable {
             order.takeProfit,
             order.stopPrice,
             order.amountIn,
-            order.orderId,
+            order.orderId, 
             tokenIn,
             tokenOut,
             order.recipient,
@@ -217,6 +218,7 @@ contract StopLimit is Ownable, IStopLimit, ReentrancyGuard, Pausable {
         bool swapOnFill,
         bytes calldata permitPayload
     ) external payable override nonReentrant whenNotPaused paysFee {
+        //@>q trace this line later
         if (permitPayload.length > 0) {
             require(amountIn < type(uint160).max, "uint160 overflow");
             IAutomation.Permit2Payload memory payload = abi.decode(
@@ -419,10 +421,12 @@ contract StopLimit is Ownable, IStopLimit, ReentrancyGuard, Pausable {
                 address(MASTER.oracles(tokenOut)) != address(0),
             "Oracle !exist"
         );
+        //@>q this is to prevent dos. can attackers make a dos attack by creating too many orders?
         require(
             dataSet.length() < MASTER.maxPendingOrders(),
             "Max Order Count Reached"
         );
+        //@>i all slippages and fees are in bips, so 10000 = 100%
         require(
             takeProfitSlippage <= 10000 &&
                 stopSlippage <= 10000 &&

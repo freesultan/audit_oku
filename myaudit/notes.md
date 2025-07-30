@@ -7,6 +7,8 @@
 
 ### Main states:
 
-StopLimit Orders: [(uint96,order),(uint96,order),...]
-Bracket Orders: [(uint96,order),(uint96,order),...]
-OracleLess Orders: [(uint96,order),(uint96,order),...]
+StopLimit Orders: [(orderid,order),(orderid,order),...]
+Bracket Orders: [(orderid,order),(orderid,order),...]
+OracleLess Orders: [(orderid,order),(orderid,order),...]
+
+dateSet active order ids

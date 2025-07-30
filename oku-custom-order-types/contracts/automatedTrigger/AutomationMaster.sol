@@ -98,6 +98,7 @@ contract AutomationMaster is IAutomationMaster, Ownable, Pausable {
     ///@notice toggle each idx in @param targets to be true/false as a valid target
     function whitelistTargets(address[] calldata targets) external {
         require(targetSetters[msg.sender], "!Allowed to set targets");
+
         for (uint i = 0; i < targets.length; i++) {
             safeTargets[targets[i]] = !safeTargets[targets[i]];
         }
@@ -218,6 +219,7 @@ contract AutomationMaster is IAutomationMaster, Ownable, Pausable {
         address sender
     ) external override onlySubKeepers returns (uint96) {
         //@>q can nonces be reset?
+        //@>q attackers can predict the nonce and generate the same order id? 
         uint96 nonce = nonces[sender]++;
         uint256 hashedValue = uint256(
             keccak256(
