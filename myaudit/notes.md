@@ -1,6 +1,6 @@
 ### Questions:
 - Are fees (flat fee & exec fee) are calculated correctly?
-- can attacker skip the fee?
+-  
 - does automation work correctly? 
 - Can automate runner steal user funds? 
 
